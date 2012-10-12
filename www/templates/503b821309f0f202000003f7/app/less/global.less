@@ -1,0 +1,265 @@
+* {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  .vertical-gradient(@background-color, darken(@background-color, 17%));
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: @text-color;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  height: 100%;
+}
+
+// Remove any styling on links
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+// Force all images not to exceed the size of their container
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.detail,
+.single {
+  ul, ol {
+    margin: 1em;
+  }
+  ul {
+    list-style: square;
+  }
+  ol {
+    list-style: decimal;
+  }
+
+  div {
+    max-width: 100%;
+  }
+
+  p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  h1 {
+    font-family: "HelveticaNeue-CondensedBold", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1.3em;
+    padding-top: 1em;
+  }
+
+  h2 {
+    font-family: "HelveticaNeue-CondensedBold", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1.2em;
+    padding-top: 1em;
+  }
+
+  h3 {
+    font-weight: normal;
+    font-size: 1.2em;
+  }
+}
+
+//---------------------------------------------------------------------------
+// The no-data message
+//---------------------------------------------------------------------------
+.nodata {
+  padding: 3em 0;
+  text-align: center;
+  font-size: 1.2em;
+  background: @light-background-color;
+  color: @dark-text-color;
+}
+
+//---------------------------------------------------------------------------
+// The contents of an article
+// (which may include all sorts of tags, including headers)
+//---------------------------------------------------------------------------
+.article {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "HelveticaNeue-CondensedBold", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  h1 {
+    font-size: 1.3em;
+    font-weight: bold;
+    padding-top: 1.2em;
+  }
+
+  h2 {
+    font-size: 1.2em;
+    font-weight: bold;
+    padding-top: 1em;
+  }
+
+  h3 {
+    font-size: 1.2em;
+    font-weight: normal;
+  }
+
+  h4 {
+    font-size: 1.1em;
+    text-decoration: underline;
+  }
+
+  h5, h6 {
+    font-size: 1em;
+    font-style: italic;
+  }
+}
+
+
+//---------------------------------------------------------------------------
+// Global container
+//---------------------------------------------------------------------------
+#container {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+
+.center {
+  text-align: center;
+}
+
+
+//---------------------------------------------------------------------------
+// A simple panel
+//---------------------------------------------------------------------------
+.panel {
+  width: 100%;
+  height: 100%;
+}
+
+
+//---------------------------------------------------------------------------
+// Contact & map
+//---------------------------------------------------------------------------
+
+#contact .body {
+  padding: 2em 1em;
+}
+
+#contact .body p {
+  margin-bottom: 1em;
+}
+
+#contact .body a {
+  text-decoration: underline;
+}
+
+#contact .body img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1em;
+  display: block;
+}
+
+.google-map {
+  height: 100%;
+}
+
+.google-map img {
+  max-width: none;
+}
+
+.map-overlay {
+  color: @dark-text-color;
+}
+
+
+//---------------------------------------------------------------------------
+// An image that loads with a spinner and a fade-in transition
+// (note the image box takes the entire space available here and may need
+// to be adjusted somehow with more specific CSS properties)
+//---------------------------------------------------------------------------
+figure,
+.figure,
+.content,
+.section,
+.left-panel {
+  position: relative;
+  display: block;
+
+  & > .img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+  }
+
+  // Fade-in transition for the underlying image
+  & > .fadein {
+    .transition(.7s ease-in-out opacity);
+    .translate3d(0,0,0);
+  }
+
+  // Center spinner in image box, not rendered by default
+  & > .loader {
+    background: transparent url(../images/image-spinner.gif) no-repeat center center;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: none;
+
+    &.inv {
+      background-image: url(../images/image-spinner-inv.gif)
+    }
+
+    &.large {
+      background-color: rgba(0, 0, 0, 0.9);
+      background-image: url(../images/spinner.gif);
+      .border-radius(.5em);
+      width: 5em;
+      height: 5em;
+      left: 50%;
+      top: 50%;
+      margin-top: -2.5em;
+      margin-left: -2.5em;
+    }
+  }
+
+  // When "loading" is there, spinner is displayed over the transparent image
+  &.loading,
+  &.dataloading {
+    & > .loader {
+      display: block;
+    }
+
+    & > img,
+    & > .img {
+      .opacity(0);
+      .transition(none);
+    }
+  }
+}
+
+// Simplified version when the image to load does not have a container
+// (note there is no way to display a spinner in that case)
+.figure-img {
+  &.fadein {
+    .transition(.7s ease-in-out opacity);
+    .translate3d(0,0,0);
+  }
+
+  &.loading,
+  &.dataloading {
+    .opacity(0);
+    .transition(none);    
+  }
+}

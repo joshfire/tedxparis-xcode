@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+
+    <title></title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <style type="text/css" media="screen">
+      body, html {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      body {
+        background: #000 url(images/spinner.gif) no-repeat center center;
+      }
+
+      #container {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body class="device-phone" ontouchmove="event.preventDefault()">
+    <div id="container">
+      <header>
+        <h1><span id="title">&nbsp;</span></h1>
+        <span>&nbsp;</span>
+        <a href="#" id="back">Back</a>
+        <a href="#" id="refresh">Refresh</a>
+        <div id="publish_button">Post</div>
+      </header>
+
+      <div id="viewport">
+        <div id="cards"></div>
+      </div>
+
+      <footer id="toolbar"><div>&nbsp;</div></footer>
+    </div>
+
+    <!-- TEMPLATES SHARED BY PHONE/TABLET/DESKTOP versions -->
+
+    <script type="text/template" id="template-nodata">
+      <div class="single content nodata">
+        No data feed to display.
+        <br/>Consider adding a data source.
+      </div>
+    </script>
+
+    <script type="text/template" id="template-toolbar">
+      <ul>
+        <%= children %>
+      </ul>
+    </script>
+
+    <script type="text/template" id="toolbar-item">
+      <li>
+        <a href="<%= item.linkURL %>" class="<%= (item.name.toLowerCase() === 'contact') ? 'contact' : item.icon %> section-<%= item.slug %>">
+          <div class="indicator"><span>&nbsp;</span></div>
+          <%= item.name %><span>&nbsp;</span>
+        </a>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-list-view">
+      <div class="first">
+        <ul class="list">
+          <%= children %>
+        </ul>
+      </div>
+      <div class="loader large">&nbsp;</div>
+    </script>
+
+    <script type="text/template" id="template-photo-item">
+      <li class="photo-item">
+        <div class="figure">
+          <a class="img fadein" href="<%= item.contentURL %>" title="<%= item.name %>" style="background-image: url(<%= imageUrl %>)">&nbsp;</a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-status-item">
+      <li class="status-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <% if (imageUrl) { %>
+              <div class="figure">
+                <div class="img fadein" title="<%= (item.author && item.author[0] ? item.author[0].name : '') %>" style="background-image: url(<%= imageUrl %>)"></div>
+                <div class="loader"></div>
+              </div>
+            <% } %>
+            <div class="right">
+              <% if (item.author && item.author[0] && item.author[0].name) { %>
+              <h3>
+                <%= item.author[0].name %>
+                <% if (item.author[0]['foaf:nick']) { %>
+                  @<%= item.author[0]['foaf:nick'] %>
+                <% } %>
+              </h3>
+              <% } %>
+              <p><%= item.name %></p>
+              <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+                <h4><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).fromNow() %></h4>
+              <% } %>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-video-item">
+      <li class="video-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <% if (imageUrl) { %>
+                <div class="figure">
+                  <div class="img fadein" style="background-image: url(<%= imageUrl %>)"></div>
+                  <div class="loader inv"></div> 
+                </div>
+              <% } %>
+              <div class="right">
+                <h3><%= item.name %></h3>
+              </div>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-event-item">
+      <li class="event-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <% if (item.startDate) { %>
+              <h3>
+                <span><%= moment(toDate(item.startDate)).calendar() %></span>
+              </h3>
+              <% } %>
+              <h4><%= item.name || item.description %></h4>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-news-item">
+      <li class="news-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <% if (imageUrl) { %>
+                <div class="figure">
+                  <div class="img fadein" style="background-image:url(<%= imageUrl.replace(/\.([a-z]{3})$/,'-150x150.$1').replace(/\.jpeg$/,'-150x150.jpg') %>)"></div>
+                  <div class="loader inv"></div> 
+                </div>
+              <% } %>
+              <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+              <h3>
+                <span><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).fromNow() %></span>
+              </h3>
+              <% } %>
+              <h4><%= item.name || item.description %></h4>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+
+    <script type="text/template" id="template-sound-item">
+      <li class="sound-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <% if (item.byArtist && item.byArtist.name) { %>
+                <h3><%= item.byArtist.name %></h3>
+              <% } else if (item.author && item.author.name) { %>
+                <h3><%= item.author.name %></h3>
+              <% } %>
+              <h4><%= item.name %></h4>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-other-item">
+      <li class="other-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <h4><%= item.name || item.description %></h4>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-status">
+      <div class="body">
+        <div class="header">
+          <% if (imageUrl) { %>
+            <img src="<%= imageUrl %>" alt="" />
+          <% } %>
+          <% if (item.author && item.author[0] && item.author[0].name) { %>
+            <h2><%= item.author[0].name %></h2>
+          <% } %>
+          <% if (item.author && item.author[0] && item.author[0]['foaf:nick']) { %>
+            <h3>@<%= item.author[0]['foaf:nick'] %></h3>
+          <% } %>
+        </div>
+        <div class="arrow"><span>&nbsp;</span></div>
+        <div class="message">
+          <div class="cover">&nbsp;</div>
+          <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+          <h4><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).fromNow() %></h4>
+          <% } %>
+          <p><%= prettyStatus(item.name) %></p>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-event">
+      <div class="body">
+        <% if (item.startDate && item.endDate && (item.startDate !== item.endDate)) { %>
+        <h3><span>From <%= moment(toDate(item.startDate)).format('LLLL') %> to <%= moment(toDate(item.endDate)).format('LLLL') %></span></h3>
+        <% } else if (item.startDate) { %>
+          <h3><span>On <%= moment(toDate(item.startDate)).format('LLLL') %></span></h3>
+        <% } %>
+        <h4><%= item.name %></h4>
+        <% if(item.description) { %>
+          <p class="description"><%= item.description %></p>
+        <% } %>
+        <% if(item.location && item.location.name) { %>
+          <p class="location"><%= item.location.name %></p>
+        <% } %>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-news">
+      <div class="body">
+        <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+        <h3><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).format('LLLL') %></h3>
+        <% } %>
+        <h4><%= item.name %></h4>
+        <div class="article">
+        <% if (item.articleBody) { %>
+        <%= item.articleBody %>
+        <% } else if (item.description) { %>
+        <%= item.description %>
+        <% } %>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-product">
+      <div class="body">
+        <h4><%= item.name %></h4>
+        <% if (imageUrl) { %>
+          <div class="center"><img src="<%= imageUrl %>" alt="" /></div>
+        <% } %>
+        <div class="article">
+        <% if (item.articleBody) { %>
+        <%= item.articleBody %>
+        <% } else if (item.description) { %>
+        <%= item.description %>
+        <% } %>
+        </div>
+
+        <% if (item.offers && item.offers[0] && item.offers[0].price) { %>
+        <div class="offer">Price: <%= (item.offers[0].priceCurrency === 'EUR') ? '€' : ((item.offers[0].priceCurrency === 'GBP') ? '₤' : '$') %><%= item.offers[0].price %></div>
+        <% } %>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-photo">
+      <div class="body">
+        <h4><%= item.name %></h4>
+        <% if (imageUrl) { %>
+          <div class="center"><img src="<%= imageUrl %>" alt="" /></div>
+        <% } %>
+        <div class="article">
+        <% if (item.articleBody) { %>
+        <%= item.articleBody %>
+        <% } else if (item.description) { %>
+        <%= item.description %>
+        <% } %>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-video">
+      <div class="media" style="height:<%= media.metadata.height %>px">
+        <%= media.html %>
+      </div>
+      <div class="body">
+        <div class="wrapper" style="height:<%= height - media.metadata.height %>px;position:relative">
+          <div>
+            <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+            <h3><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).format('LLLL') %></h3>
+            <% } %>
+            <h4><%= item.name %></h4>
+            <div class="article">
+            <% if(item.description) { %>
+            <p><%= item.description %></p>
+            <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/template" id="template-other">
+      <div class="body">
+        <h4><%= item.name %></h4>
+        <% if (imageUrl) { %>
+          <div class="center"><img src="<%= imageUrl %>" alt="" /></div>
+        <% } %>
+        <div class="article">
+        <% if (item.articleBody) { %>
+        <%= item.articleBody %>
+        <% } else if (item.description) { %>
+        <%= item.description %>
+        <% } %>
+        </div>
+      </div>
+    </script>
+
+    <!-- TEMPLATES SHARED BY ALL VERSIONS FOR SPOT -->
+
+    <script type="text/template" id="template-contact-index">
+      <div class="body"><%= textContent %></div>
+    </script>
+
+    <script type="text/template" id="template-contact-map">
+      <div class="google-map"></div>
+    </script>
+
+    <script type="text/template" id="template-map-overlay">
+      <p class="map-overlay"><%= address %></p>
+    </script>
+
+    <!-- TEMPLATES SPECIFIC TO THIS VERSION -->
+
+    <script type="text/template" id="template-product-item">
+      <li class="product-item">
+        <div>
+          <a href="#<%= section.slug %>/<%= offset %>">
+            <div>
+              <% if (imageUrl) { %>
+                <div class="figure">
+                  <div class="img fadein" style="background-image: url(<%= imageUrl %>)"></div>
+                  <div class="loader"></div> 
+                </div>
+              <% } %>
+              <h4>
+                <%= item.name %>
+                <% if (item.offers && item.offers[0] && item.offers[0].price) {  %>
+                  <span class="offer"><%= (item.offers[0].priceCurrency === 'EUR') ? '€' : ((item.offers[0].priceCurrency === 'GBP') ? '₤' : '$') %><%= item.offers[0].price %></span>
+                <% } %>
+              </h4>
+            </div>
+          </a>
+        </div>
+      </li>
+    </script>
+
+    <script type="text/template" id="template-sound">
+      <div class="body">
+        <% if (item.datePublished || item.uploadDate || item.dateCreated) { %>
+        <h3><%= moment(toDate(item.datePublished || item.uploadDate || item.dateCreated)).format('LLLL') %></h3>
+        <% } %>
+        <h4>
+          <%= item.name %>
+          <% if (item.byArtist && item.byArtist.name) { %> by <%= item.byArtist.name %>
+          <% } else if (item.author && item.author.name) { %> by <%= item.author.name %><% } %>
+        </h4>
+        <% if(item.thumbnail && item.thumbnail.length) { %>
+          <img src="<%= item.thumbnail[0].contentURL %>" />
+        <% } %>
+        <div class="media"><%= media.html %></div>
+        <% if(item.description) { %>
+        <p><%= item.description %></p>
+        <% } %>
+      </div>
+    </script>
+
+    <script data-joshfire-bootstrap src="index.phone.optimized.html.bootstrap.js"></script>
+    <script></script>
+    <script type="text/javascript" src="todate.js"></script>
+    <script type="text/javascript" src="vendor/moment.js"></script>
+    <script type="text/javascript" src="vendor/sidjs-0.1.js"></script>
+    <script type="text/javascript" src="prettystatus.js"></script>
+    <script data-main="app.phone" src="joshfire-framework/lib/adapters/ios/bootstrap.js"></script>
+    
+
+    <!------>    RAJOUT DAVID VINISKETCH   -->
+    
+    <link rel="stylesheet" type="text/css" href="vinisketch/assets/Networking.css">
+    <script src="http://cdn.viadeo.com/javascript/sdk.js"></script>
+    <script type="text/javascript" src="vinisketch/vendor/ios/cordova-2.0.0.js"></script>
+    <script type="text/javascript" src="vinisketch/vendor/ios/ChildBrowser.js"></script>
+    <script type="text/javascript" src="vinisketch/ViadeoConnect.js"></script>
+
+    <!--               FIN RAJOUT          -->
+
+  </body>
+</html>
